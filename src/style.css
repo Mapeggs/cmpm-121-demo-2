@@ -46,6 +46,14 @@ h1 {
   cursor: crosshair;
 }
 
+/* Button container */
+.button-container {
+  display: flex;
+  justify-content: center;
+  gap: 1em; /* Space between buttons */
+  margin-top: 1em;
+}
+
 /* Button styling */
 button {
   border-radius: 8px;
@@ -58,7 +66,6 @@ button {
   color: white;
   cursor: pointer;
   transition: border-color 0.25s;
-  margin-top: 1em;
 }
 button:hover {
   border-color: #646cff;
