@@ -21,7 +21,7 @@ const createCanvasElement = (width: number, height: number, cssClass: string): H
     return canvasElement;
 };
 
-// Function to create a button with specific text and event listener
+// Function to create a button with specific text and event listen
 const createButton = (text: string, onClick: () => void): HTMLButtonElement => {
     const button = document.createElement("button");
     button.textContent = text;
