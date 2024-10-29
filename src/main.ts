@@ -21,7 +21,7 @@ const createCanvasElement = (width: number, height: number, cssClass: string): H
     return canvasElement;
 };
 
-// Function to create a button with specific text and event listen
+// Function to create a button with specific text and event listener
 const createButton = (text: string, onClick: () => void): HTMLButtonElement => {
     const button = document.createElement("button");
     button.textContent = text;
@@ -39,24 +39,54 @@ const clearButton = createButton("Clear", () => clearCanvas());
 const undoButton = createButton("Undo", () => undoLastPath());
 const redoButton = createButton("Redo", () => redoLastPath());
 
-// Create a button container and add the buttons inside it
 const buttonContainer = document.createElement("div");
 buttonContainer.classList.add("button-container");
 buttonContainer.append(clearButton, undoButton, redoButton);
 
-// Append the button container to the main app container below the canvas
 mainContainer.appendChild(buttonContainer);
+
+// Class for representing marker lines
+class MarkerLine {
+    private points: { x: number; y: number }[] = [];
+
+    constructor(startX: number, startY: number) {
+        this.points.push({ x: startX, y: startY });
+    }
+
+    // Adds a new point to the line as the user drags
+    drag(x: number, y: number) {
+        this.points.push({ x, y });
+    }
+
+    // Draws the line on the canvas
+    display(ctx: CanvasRenderingContext2D) {
+        if (this.points.length < 2) return;
+
+        ctx.beginPath();
+        ctx.moveTo(this.points[0].x, this.points[0].y);
+
+        for (let i = 1; i < this.points.length; i++) {
+            const { x, y } = this.points[i];
+            ctx.lineTo(x, y);
+        }
+
+        ctx.strokeStyle = "black";
+        ctx.lineWidth = 2;
+        ctx.lineCap = "round";
+        ctx.stroke();
+    }
+}
 
 // Drawing state
 let isDrawing = false;
-let paths: { x: number; y: number }[][] = []; // Array of arrays of points
-let undonePaths: { x: number; y: number }[][] = []; // Stores undone paths for redo functionality
-let currentPath: { x: number; y: number }[] = [];
+let paths: MarkerLine[] = []; // Array of MarkerLine objects
+let undonePaths: MarkerLine[] = []; // Stores undone MarkerLine objects for redo functionality
+let currentPath: MarkerLine | null = null;
 
 // Function to start drawing on mousedown
 const startDrawing = (event: MouseEvent) => {
     isDrawing = true;
-    currentPath = [{ x: event.offsetX, y: event.offsetY }];
+    currentPath = new MarkerLine(event.offsetX, event.offsetY);
     paths.push(currentPath);
     undonePaths = []; // Clear redo history whenever a new path is drawn
     dispatchDrawingChanged();
@@ -66,16 +96,15 @@ const startDrawing = (event: MouseEvent) => {
 const stopDrawing = () => {
     if (isDrawing) {
         isDrawing = false;
-        currentPath = [];
+        currentPath = null;
     }
 };
 
-// Function to capture the drawing path
+// Function to extend the current path as the user drags the mouse
 const capturePoint = (event: MouseEvent) => {
-    if (!isDrawing) return;
+    if (!isDrawing || !currentPath) return;
 
-    const point = { x: event.offsetX, y: event.offsetY };
-    currentPath.push(point);
+    currentPath.drag(event.offsetX, event.offsetY);
     dispatchDrawingChanged();
 };
 
@@ -97,7 +126,7 @@ const undoLastPath = () => {
     if (paths.length > 0) {
         const lastPath = paths.pop();
         if (lastPath) {
-            undonePaths.push(lastPath); // Move last path to undone stack
+            undonePaths.push(lastPath);
             dispatchDrawingChanged();
         }
     }
@@ -108,7 +137,7 @@ const redoLastPath = () => {
     if (undonePaths.length > 0) {
         const redoPath = undonePaths.pop();
         if (redoPath) {
-            paths.push(redoPath); // Move last undone path back to paths
+            paths.push(redoPath);
             dispatchDrawingChanged();
         }
     }
@@ -120,22 +149,7 @@ const redrawCanvas = () => {
     if (context) {
         context.clearRect(0, 0, canvas.width, canvas.height); // Clear the canvas
 
-        context.strokeStyle = "black";
-        context.lineWidth = 2;
-        context.lineCap = "round";
-
-        // Draw each path as a separate line
-        paths.forEach(path => {
-            context.beginPath();
-            path.forEach((point, index) => {
-                if (index === 0) {
-                    context.moveTo(point.x, point.y);
-                } else {
-                    context.lineTo(point.x, point.y);
-                }
-            });
-            context.stroke();
-        });
+        paths.forEach(path => path.display(context));
     }
 };
 
@@ -143,7 +157,7 @@ const redrawCanvas = () => {
 canvas.addEventListener("mousedown", startDrawing);
 canvas.addEventListener("mousemove", capturePoint);
 canvas.addEventListener("mouseup", stopDrawing);
-canvas.addEventListener("mouseleave", stopDrawing);
+canvas.addEventListener("mouseleave", stopDrawing); // Stop drawing if mouse leaves canvas
 
 // Register an observer for the "drawing-changed" event
 canvas.addEventListener("drawing-changed", redrawCanvas);
