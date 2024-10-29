@@ -1,8 +1,26 @@
+// Import CSS for styling
 import "./style.css";
 
+// Set application title
 const APPLICATION_TITLE = "Drawing App";
 const mainContainer = document.querySelector<HTMLDivElement>("#app")!;
 document.title = APPLICATION_TITLE;
+
+// Initial sticker set defined in a single array
+const stickers = [
+    { name: "Star", icon: "⭐" },
+    { name: "Heart", icon: "❤️" },
+    { name: "Smiley", icon: "😊" },
+];
+
+// Function to add a new sticker from user input
+const addCustomSticker = () => {
+    const customIcon = prompt("Enter your custom sticker:", "💬");
+    if (customIcon) {
+        stickers.push({ name: `Custom Sticker ${stickers.length + 1}`, icon: customIcon });
+        renderStickers(); // Re-render to include the new sticker
+    }
+};
 
 // Function to create the app title
 const createAppTitle = (titleText: string): HTMLElement => {
@@ -53,12 +71,41 @@ const clearButton = createButton("Clear", () => clearCanvas());
 const undoButton = createButton("Undo", () => undoLastPath());
 const redoButton = createButton("Redo", () => redoLastPath());
 
-const buttonContainer = document.createElement("div");
-buttonContainer.classList.add("button-container");
-buttonContainer.append(thinButton, thickButton, clearButton, undoButton, redoButton);
-mainContainer.appendChild(buttonContainer);
+// Create the custom sticker button
+const customStickerButton = createButton("Create Custom Sticker", addCustomSticker);
 
-// Modified MarkerLine class to accept thickness parameter
+// Function to create sticker buttons based on sticker data
+const createStickerButton = (sticker: { name: string, icon: string }) => {
+    const button = document.createElement("button");
+    button.textContent = sticker.icon;
+    button.title = sticker.name;
+    button.addEventListener("click", () => applySticker(sticker.icon));
+    return button;
+};
+
+// Function to apply sticker on the canvas or any designated area
+const applySticker = (icon: string) => {
+    const context = canvas.getContext("2d");
+    if (context) {
+        const x = Math.random() * canvas.width; // Random x position within canvas width
+        const y = Math.random() * canvas.height; // Random y position within canvas height
+        context.font = "30px Arial"; // Font size for sticker
+        context.fillText(icon, x, y); // Draw sticker on canvas at (x, y)
+    }
+};
+
+// Render all stickers without clearing other buttons
+const renderStickers = () => {
+    const stickerContainer = document.querySelector(".sticker-container");
+    if (stickerContainer) stickerContainer.innerHTML = ""; // Clear existing stickers
+
+    stickers.forEach(sticker => {
+        const stickerButton = createStickerButton(sticker);
+        stickerContainer?.appendChild(stickerButton);
+    });
+};
+
+// Drawing state and thickness setup for line drawing
 class MarkerLine {
     private points: { x: number; y: number }[] = [];
     private thickness: number;
@@ -92,7 +139,7 @@ class MarkerLine {
     }
 }
 
-// Drawing state
+// Set up initial drawing state
 let isDrawing = false;
 let paths: MarkerLine[] = [];
 let undonePaths: MarkerLine[] = [];
@@ -131,6 +178,10 @@ const dispatchDrawingChanged = () => {
 
 // Function to clear the canvas
 const clearCanvas = () => {
+    const context = canvas.getContext("2d");
+    if (context) {
+        context.clearRect(0, 0, canvas.width, canvas.height); // Clear the canvas
+    }
     paths = [];
     undonePaths = [];
     dispatchDrawingChanged();
@@ -172,7 +223,20 @@ const redrawCanvas = () => {
 canvas.addEventListener("mousedown", startDrawing);
 canvas.addEventListener("mousemove", capturePoint);
 canvas.addEventListener("mouseup", stopDrawing);
-canvas.addEventListener("mouseleave", stopDrawing); // Stop drawing if mouse leaves canvas
+canvas.addEventListener("mouseleave", stopDrawing);
 
 // Register an observer for the "drawing-changed" event
 canvas.addEventListener("drawing-changed", redrawCanvas);
+
+// Set up main button container and sticker container
+const buttonContainer = document.createElement("div");
+buttonContainer.classList.add("button-container");
+const stickerContainer = document.createElement("div");
+stickerContainer.classList.add("sticker-container");
+
+mainContainer.appendChild(buttonContainer);
+buttonContainer.append(customStickerButton, thinButton, thickButton, clearButton, undoButton, redoButton);
+buttonContainer.appendChild(stickerContainer);
+
+// Initial render of sticker buttons
+renderStickers();
