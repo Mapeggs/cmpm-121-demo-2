@@ -83,27 +83,24 @@ const createStickerButton = (sticker: { name: string, icon: string }) => {
     return button;
 };
 
-// Function to apply sticker on the canvas or any designated area
-const applySticker = (icon: string) => {
-    const context = canvas.getContext("2d");
-    if (context) {
-        const x = Math.random() * canvas.width; // Random x position within canvas width
-        const y = Math.random() * canvas.height; // Random y position within canvas height
-        context.font = "30px Arial"; // Font size for sticker
-        context.fillText(icon, x, y); // Draw sticker on canvas at (x, y)
+// Sticker class to track sticker details (position and icon)
+class Sticker {
+    x: number;
+    y: number;
+    icon: string;
+
+    constructor(x: number, y: number, icon: string) {
+        this.x = x;
+        this.y = y;
+        this.icon = icon;
     }
-};
 
-// Render all stickers without clearing other buttons
-const renderStickers = () => {
-    const stickerContainer = document.querySelector(".sticker-container");
-    if (stickerContainer) stickerContainer.innerHTML = ""; // Clear existing stickers
-
-    stickers.forEach(sticker => {
-        const stickerButton = createStickerButton(sticker);
-        stickerContainer?.appendChild(stickerButton);
-    });
-};
+    // Display sticker on the provided context
+    display(ctx: CanvasRenderingContext2D) {
+        ctx.font = "30px Arial";
+        ctx.fillText(this.icon, this.x, this.y);
+    }
+}
 
 // Drawing state and thickness setup for line drawing
 class MarkerLine {
@@ -141,8 +138,8 @@ class MarkerLine {
 
 // Set up initial drawing state
 let isDrawing = false;
-let paths: MarkerLine[] = [];
-let undonePaths: MarkerLine[] = [];
+let paths: (MarkerLine | Sticker)[] = [];
+let undonePaths: (MarkerLine | Sticker)[] = [];
 let currentPath: MarkerLine | null = null;
 
 // Function to start drawing with the current marker thickness
@@ -215,8 +212,43 @@ const redrawCanvas = () => {
     if (context) {
         context.clearRect(0, 0, canvas.width, canvas.height); // Clear the canvas
 
-        paths.forEach(path => path.display(context));
+        paths.forEach(item => item.display(context)); // Draw all paths and stickers
     }
+};
+
+// Modified applySticker function to create Sticker objects and add them to paths
+const applySticker = (icon: string) => {
+    const context = canvas.getContext("2d");
+    if (context) {
+        const x = Math.random() * canvas.width; // Random x position within canvas width
+        const y = Math.random() * canvas.height; // Random y position within canvas height
+
+        const newSticker = new Sticker(x, y, icon); // Create Sticker object
+        paths.push(newSticker); // Add sticker to paths for rendering and exporting
+        newSticker.display(context); // Display on the main canvas immediately
+        dispatchDrawingChanged(); // Update canvas state to include the sticker
+    }
+};
+
+// Export function to save canvas as PNG
+const exportDrawing = () => {
+    const exportCanvas = document.createElement("canvas");
+    exportCanvas.width = 1024;
+    exportCanvas.height = 1024;
+    const exportContext = exportCanvas.getContext("2d");
+
+    if (!exportContext) return;
+
+    exportContext.scale(4, 4); // Scale up to 4x for high-res export
+
+    // Render both paths and stickers to the export canvas
+    paths.forEach(item => item.display(exportContext));
+
+    const dataURL = exportCanvas.toDataURL("image/png");
+    const downloadLink = document.createElement("a");
+    downloadLink.href = dataURL;
+    downloadLink.download = "drawing.png";
+    downloadLink.click();
 };
 
 // Register event listeners for drawing
@@ -234,9 +266,22 @@ buttonContainer.classList.add("button-container");
 const stickerContainer = document.createElement("div");
 stickerContainer.classList.add("sticker-container");
 
+// Append button container to mainContainer
 mainContainer.appendChild(buttonContainer);
 buttonContainer.append(customStickerButton, thinButton, thickButton, clearButton, undoButton, redoButton);
-buttonContainer.appendChild(stickerContainer);
 
-// Initial render of sticker buttons
-renderStickers();
+// Render stickers and append sticker buttons
+const renderStickers = () => {
+    stickerContainer.innerHTML = ""; // Clear existing stickers
+
+    stickers.forEach(sticker => {
+        const stickerButton = createStickerButton(sticker);
+        stickerContainer.appendChild(stickerButton);
+    });
+};
+mainContainer.appendChild(stickerContainer);
+renderStickers(); // Initial render of sticker buttons
+
+// Add the export button
+const exportButton = createButton("Export", exportDrawing);
+buttonContainer.appendChild(exportButton);
