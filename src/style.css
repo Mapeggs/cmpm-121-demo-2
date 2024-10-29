@@ -75,6 +75,12 @@ button:focus-visible {
   outline: 4px auto -webkit-focus-ring-color;
 }
 
+.selectedTool {
+  background-color: #646cff;
+  color: white;
+  border-color: #646cff;
+}
+
 @media (prefers-color-scheme: light) {
   :root {
     color: #213547;

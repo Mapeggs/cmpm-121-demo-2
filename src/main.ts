@@ -2,7 +2,6 @@ import "./style.css";
 
 const APPLICATION_TITLE = "Drawing App";
 const mainContainer = document.querySelector<HTMLDivElement>("#app")!;
-
 document.title = APPLICATION_TITLE;
 
 // Function to create the app title
@@ -29,11 +28,26 @@ const createButton = (text: string, onClick: () => void): HTMLButtonElement => {
     return button;
 };
 
-// Add title, canvas, and buttons to the main container
+// Set up app layout
 mainContainer.appendChild(createAppTitle(APPLICATION_TITLE));
 
 const canvas = createCanvasElement(256, 256, "app-canvas");
 mainContainer.appendChild(canvas);
+
+// Create thickness buttons
+const thinButton = createButton("Thin", () => setMarkerThickness(2));
+const thickButton = createButton("Thick", () => setMarkerThickness(5));
+
+// Function to add "selectedTool" class to the active tool
+const setMarkerThickness = (thickness: number) => {
+    markerThickness = thickness;
+    thinButton.classList.toggle("selectedTool", thickness === 2);
+    thickButton.classList.toggle("selectedTool", thickness === 5);
+};
+
+// Set up initial thickness
+let markerThickness = 2; // Default to thin
+thinButton.classList.add("selectedTool"); // Mark thin as selected initially
 
 const clearButton = createButton("Clear", () => clearCanvas());
 const undoButton = createButton("Undo", () => undoLastPath());
@@ -41,16 +55,17 @@ const redoButton = createButton("Redo", () => redoLastPath());
 
 const buttonContainer = document.createElement("div");
 buttonContainer.classList.add("button-container");
-buttonContainer.append(clearButton, undoButton, redoButton);
-
+buttonContainer.append(thinButton, thickButton, clearButton, undoButton, redoButton);
 mainContainer.appendChild(buttonContainer);
 
-// Class for representing marker lines
+// Modified MarkerLine class to accept thickness parameter
 class MarkerLine {
     private points: { x: number; y: number }[] = [];
+    private thickness: number;
 
-    constructor(startX: number, startY: number) {
+    constructor(startX: number, startY: number, thickness: number) {
         this.points.push({ x: startX, y: startY });
+        this.thickness = thickness;
     }
 
     // Adds a new point to the line as the user drags
@@ -58,7 +73,7 @@ class MarkerLine {
         this.points.push({ x, y });
     }
 
-    // Draws the line on the canvas
+    // Draws the line on the canvas with the specified thickness
     display(ctx: CanvasRenderingContext2D) {
         if (this.points.length < 2) return;
 
@@ -71,7 +86,7 @@ class MarkerLine {
         }
 
         ctx.strokeStyle = "black";
-        ctx.lineWidth = 2;
+        ctx.lineWidth = this.thickness; // Use thickness for line width
         ctx.lineCap = "round";
         ctx.stroke();
     }
@@ -79,16 +94,16 @@ class MarkerLine {
 
 // Drawing state
 let isDrawing = false;
-let paths: MarkerLine[] = []; // Array of MarkerLine objects
-let undonePaths: MarkerLine[] = []; // Stores undone MarkerLine objects for redo functionality
+let paths: MarkerLine[] = [];
+let undonePaths: MarkerLine[] = [];
 let currentPath: MarkerLine | null = null;
 
-// Function to start drawing on mousedown
+// Function to start drawing with the current marker thickness
 const startDrawing = (event: MouseEvent) => {
     isDrawing = true;
-    currentPath = new MarkerLine(event.offsetX, event.offsetY);
+    currentPath = new MarkerLine(event.offsetX, event.offsetY, markerThickness); // Pass thickness
     paths.push(currentPath);
-    undonePaths = []; // Clear redo history whenever a new path is drawn
+    undonePaths = [];
     dispatchDrawingChanged();
 };
 
