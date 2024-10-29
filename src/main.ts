@@ -52,9 +52,31 @@ mainContainer.appendChild(createAppTitle(APPLICATION_TITLE));
 const canvas = createCanvasElement(256, 256, "app-canvas");
 mainContainer.appendChild(canvas);
 
+// Function to generate a random color
+const getRandomColor = (): string => {
+    const letters = '0123456789ABCDEF';
+    let color = '#';
+    for (let i = 0; i < 6; i++) {
+        color += letters[Math.floor(Math.random() * 16)];
+    }
+    return color;
+};
+
+// Initial color setup and color preview display
+let currentColor = getRandomColor();
+const colorPreview = document.createElement("div");
+colorPreview.classList.add("color-preview");
+colorPreview.style.backgroundColor = currentColor;
+
+// Update color and preview when tool button is pressed
+const updateCurrentColor = () => {
+    currentColor = getRandomColor(); // Randomize color
+    colorPreview.style.backgroundColor = currentColor; // Update preview
+};
+
 // Create thickness buttons
-const thinButton = createButton("Thin", () => setMarkerThickness(2));
-const thickButton = createButton("Thick", () => setMarkerThickness(5));
+const thinButton = createButton("Thin", () => { setMarkerThickness(2); updateCurrentColor(); });
+const thickButton = createButton("Thick", () => { setMarkerThickness(5); updateCurrentColor(); });
 
 // Function to add "selectedTool" class to the active tool
 const setMarkerThickness = (thickness: number) => {
@@ -106,10 +128,12 @@ class Sticker {
 class MarkerLine {
     private points: { x: number; y: number }[] = [];
     private thickness: number;
+    private color: string;
 
-    constructor(startX: number, startY: number, thickness: number) {
+    constructor(startX: number, startY: number, thickness: number, color: string) {
         this.points.push({ x: startX, y: startY });
         this.thickness = thickness;
+        this.color = color;
     }
 
     // Adds a new point to the line as the user drags
@@ -117,7 +141,7 @@ class MarkerLine {
         this.points.push({ x, y });
     }
 
-    // Draws the line on the canvas with the specified thickness
+    // Draws the line on the canvas with the specified thickness and color
     display(ctx: CanvasRenderingContext2D) {
         if (this.points.length < 2) return;
 
@@ -129,8 +153,8 @@ class MarkerLine {
             ctx.lineTo(x, y);
         }
 
-        ctx.strokeStyle = "black";
-        ctx.lineWidth = this.thickness; // Use thickness for line width
+        ctx.strokeStyle = this.color; // Use the color for the stroke
+        ctx.lineWidth = this.thickness;
         ctx.lineCap = "round";
         ctx.stroke();
     }
@@ -142,10 +166,10 @@ let paths: (MarkerLine | Sticker)[] = [];
 let undonePaths: (MarkerLine | Sticker)[] = [];
 let currentPath: MarkerLine | null = null;
 
-// Function to start drawing with the current marker thickness
+// Function to start drawing with the current marker thickness and color
 const startDrawing = (event: MouseEvent) => {
     isDrawing = true;
-    currentPath = new MarkerLine(event.offsetX, event.offsetY, markerThickness); // Pass thickness
+    currentPath = new MarkerLine(event.offsetX, event.offsetY, markerThickness, currentColor); // Pass thickness and color
     paths.push(currentPath);
     undonePaths = [];
     dispatchDrawingChanged();
@@ -266,9 +290,9 @@ buttonContainer.classList.add("button-container");
 const stickerContainer = document.createElement("div");
 stickerContainer.classList.add("sticker-container");
 
-// Append button container to mainContainer
+// Append button container and color preview to mainContainer
 mainContainer.appendChild(buttonContainer);
-buttonContainer.append(customStickerButton, thinButton, thickButton, clearButton, undoButton, redoButton);
+buttonContainer.append(colorPreview, customStickerButton, thinButton, thickButton, clearButton, undoButton, redoButton);
 
 // Render stickers and append sticker buttons
 const renderStickers = () => {
