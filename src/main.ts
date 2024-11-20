@@ -1,12 +1,10 @@
-// Import CSS for styling
 import "./style.css";
 
-// Set application title
 const APPLICATION_TITLE = "Drawing App";
 const mainContainer = document.querySelector<HTMLDivElement>("#app")!;
 document.title = APPLICATION_TITLE;
 
-// Initial sticker set defined in a single array
+// predefined stickers for a given array
 const stickers = [
     { name: "Star", icon: "⭐" },
     { name: "Heart", icon: "❤️" },
@@ -22,7 +20,6 @@ const addCustomSticker = () => {
     }
 };
 
-// Function to create the app title
 const createAppTitle = (titleText: string): HTMLElement => {
     const titleElement = document.createElement("h1");
     titleElement.textContent = titleText;
@@ -87,7 +84,7 @@ const setMarkerThickness = (thickness: number) => {
 
 // Set up initial thickness
 let markerThickness = 2; // Default to thin
-thinButton.classList.add("selectedTool"); // Mark thin as selected initially
+thinButton.classList.add("selectedTool"); 
 
 const clearButton = createButton("Clear", () => clearCanvas());
 const undoButton = createButton("Undo", () => undoLastPath());
@@ -153,7 +150,7 @@ class MarkerLine {
             ctx.lineTo(x, y);
         }
 
-        ctx.strokeStyle = this.color; // Use the color for the stroke
+        ctx.strokeStyle = this.color; 
         ctx.lineWidth = this.thickness;
         ctx.lineCap = "round";
         ctx.stroke();
@@ -244,8 +241,8 @@ const redrawCanvas = () => {
 const applySticker = (icon: string) => {
     const context = canvas.getContext("2d");
     if (context) {
-        const x = Math.random() * canvas.width; // Random x position within canvas width
-        const y = Math.random() * canvas.height; // Random y position within canvas height
+        const x = Math.random() * canvas.width; 
+        const y = Math.random() * canvas.height; 
 
         const newSticker = new Sticker(x, y, icon); // Create Sticker object
         paths.push(newSticker); // Add sticker to paths for rendering and exporting
@@ -263,7 +260,7 @@ const exportDrawing = () => {
 
     if (!exportContext) return;
 
-    exportContext.scale(4, 4); // Scale up to 4x for high-res export
+    exportContext.scale(4, 4); 
 
     // Render both paths and stickers to the export canvas
     paths.forEach(item => item.display(exportContext));
@@ -304,7 +301,7 @@ const renderStickers = () => {
     });
 };
 mainContainer.appendChild(stickerContainer);
-renderStickers(); // Initial render of sticker buttons
+renderStickers(); 
 
 // Add the export button
 const exportButton = createButton("Export", exportDrawing);
