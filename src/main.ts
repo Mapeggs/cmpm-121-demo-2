@@ -1,25 +1,12 @@
+// Import CSS for styling
 import "./style.css";
 
+// Set application title
 const APPLICATION_TITLE = "Drawing App";
 const mainContainer = document.querySelector<HTMLDivElement>("#app")!;
 document.title = APPLICATION_TITLE;
-
-// predefined stickers for a given array
-const stickers = [
-    { name: "Star", icon: "⭐" },
-    { name: "Heart", icon: "❤️" },
-    { name: "Smiley", icon: "😊" },
-];
-
-// Function to add a new sticker from user input
-const addCustomSticker = () => {
-    const customIcon = prompt("Enter your custom sticker:", "💬");
-    if (customIcon) {
-        stickers.push({ name: `Custom Sticker ${stickers.length + 1}`, icon: customIcon });
-        renderStickers(); // Re-render to include the new sticker
-    }
-};
-
+//creating app display
+// Function to create the app title
 const createAppTitle = (titleText: string): HTMLElement => {
     const titleElement = document.createElement("h1");
     titleElement.textContent = titleText;
@@ -48,6 +35,53 @@ mainContainer.appendChild(createAppTitle(APPLICATION_TITLE));
 
 const canvas = createCanvasElement(256, 256, "app-canvas");
 mainContainer.appendChild(canvas);
+
+const stickers = [
+    { name: "Star", icon: "⭐" },
+    { name: "Heart", icon: "❤️" },
+    { name: "Smiley", icon: "😊" },
+];
+
+// Function to add a new sticker from user input
+const addCustomSticker = () => {
+    const customIcon = prompt("Enter your custom sticker:", "💬");
+    if (customIcon) {
+        stickers.push({ name: `Custom Sticker ${stickers.length + 1}`, icon: customIcon });
+        renderStickers(); // Re-render to include the new sticker
+    }
+};
+
+// Create the custom sticker button
+const customStickerButton = createButton("Create Custom Sticker", addCustomSticker);
+
+// Function to create sticker buttons based on sticker data
+const createStickerButton = (sticker: { name: string, icon: string }) => {
+    const button = document.createElement("button");
+    button.textContent = sticker.icon;
+    button.title = sticker.name;
+    button.addEventListener("click", () => applySticker(sticker.icon));
+    return button;
+};
+
+// Sticker class to track sticker details (position and icon)
+class Sticker {
+    x: number;
+    y: number;
+    icon: string;
+
+    constructor(x: number, y: number, icon: string) {
+        this.x = x;
+        this.y = y;
+        this.icon = icon;
+    }
+
+    // Display sticker on the provided context
+    display(ctx: CanvasRenderingContext2D) {
+        ctx.font = "30px Arial";
+        ctx.fillText(this.icon, this.x, this.y);
+    }
+}
+
 
 // Function to generate a random color
 const getRandomColor = (): string => {
@@ -84,42 +118,11 @@ const setMarkerThickness = (thickness: number) => {
 
 // Set up initial thickness
 let markerThickness = 2; // Default to thin
-thinButton.classList.add("selectedTool"); 
+thinButton.classList.add("selectedTool"); // Mark thin as selected initially
 
 const clearButton = createButton("Clear", () => clearCanvas());
 const undoButton = createButton("Undo", () => undoLastPath());
 const redoButton = createButton("Redo", () => redoLastPath());
-
-// Create the custom sticker button
-const customStickerButton = createButton("Create Custom Sticker", addCustomSticker);
-
-// Function to create sticker buttons based on sticker data
-const createStickerButton = (sticker: { name: string, icon: string }) => {
-    const button = document.createElement("button");
-    button.textContent = sticker.icon;
-    button.title = sticker.name;
-    button.addEventListener("click", () => applySticker(sticker.icon));
-    return button;
-};
-
-// Sticker class to track sticker details (position and icon)
-class Sticker {
-    x: number;
-    y: number;
-    icon: string;
-
-    constructor(x: number, y: number, icon: string) {
-        this.x = x;
-        this.y = y;
-        this.icon = icon;
-    }
-
-    // Display sticker on the provided context
-    display(ctx: CanvasRenderingContext2D) {
-        ctx.font = "30px Arial";
-        ctx.fillText(this.icon, this.x, this.y);
-    }
-}
 
 // Drawing state and thickness setup for line drawing
 class MarkerLine {
@@ -150,7 +153,7 @@ class MarkerLine {
             ctx.lineTo(x, y);
         }
 
-        ctx.strokeStyle = this.color; 
+        ctx.strokeStyle = this.color; // Use the color for the stroke
         ctx.lineWidth = this.thickness;
         ctx.lineCap = "round";
         ctx.stroke();
@@ -241,8 +244,8 @@ const redrawCanvas = () => {
 const applySticker = (icon: string) => {
     const context = canvas.getContext("2d");
     if (context) {
-        const x = Math.random() * canvas.width; 
-        const y = Math.random() * canvas.height; 
+        const x = Math.random() * canvas.width; // Random x position within canvas width
+        const y = Math.random() * canvas.height; // Random y position within canvas height
 
         const newSticker = new Sticker(x, y, icon); // Create Sticker object
         paths.push(newSticker); // Add sticker to paths for rendering and exporting
@@ -260,7 +263,7 @@ const exportDrawing = () => {
 
     if (!exportContext) return;
 
-    exportContext.scale(4, 4); 
+    exportContext.scale(4, 4); // Scale up to 4x for high-res export
 
     // Render both paths and stickers to the export canvas
     paths.forEach(item => item.display(exportContext));
@@ -301,7 +304,7 @@ const renderStickers = () => {
     });
 };
 mainContainer.appendChild(stickerContainer);
-renderStickers(); 
+renderStickers(); // Initial render of sticker buttons
 
 // Add the export button
 const exportButton = createButton("Export", exportDrawing);
